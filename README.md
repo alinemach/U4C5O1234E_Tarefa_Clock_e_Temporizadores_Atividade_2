@@ -34,4 +34,4 @@ Este projeto implementa um sistema de controle de semáforo utilizando um Raspbe
 
 🎥 Vídeo de Simulação
 
-🔗 Assista ao vídeo da simulação aqui (Substituir pelo link real)
+🔗 Assista ao vídeo da simulação aqui ([Substituir pelo link real](https://github.com/alinemach/U4C5O1234E_Tarefa_Clock_e_Temporizadores_Atividade_2/blob/main/src/atividade2.mp4))
