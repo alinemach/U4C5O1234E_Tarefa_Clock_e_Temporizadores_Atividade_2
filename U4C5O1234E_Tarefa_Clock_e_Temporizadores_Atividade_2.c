@@ -12,7 +12,7 @@
 volatile int estado = 0;        // Estado atual do semáforo
 volatile bool ciclo_ativo = false; // Indica se o ciclo está rodando
 
-// Função de callback do temporizador
+// Função de callback do temporizador para mudar o estado do semáforo
 bool mudar_estado_callback(struct repeating_timer *t) {
     // Desliga todos os LEDs antes de ativar o próximo estado
     gpio_put(LED_VERDE, 0);
@@ -25,13 +25,13 @@ bool mudar_estado_callback(struct repeating_timer *t) {
             gpio_put(LED_VERDE, 1);
             gpio_put(LED_AZUL, 1);
             gpio_put(LED_VERMELHO, 1);
-            printf("Estado 0: Todos acesos\n");
+            printf("Estado 0: Todos acesos - luz branca\n");
             estado = 1;
             break;
         case 1:  // Apenas vermelho e verde acesos
             gpio_put(LED_VERDE, 1);
             gpio_put(LED_VERMELHO, 1);
-            printf("Estado 1: Vermelho e Verde\n");
+            printf("Estado 1: Vermelho e Verde - luz amarela\n");
             estado = 2;
             break;
         case 2:  // Apenas verde aceso
@@ -48,6 +48,14 @@ bool mudar_estado_callback(struct repeating_timer *t) {
     return true; // Continua chamando o callback a cada 3 segundos
 }
 
+// Função de callback para imprimir o status do semáforo a cada 1 segundo
+bool imprimir_status_callback(struct repeating_timer *t) {
+    if (ciclo_ativo) {
+        printf("Semáforo em execução...\n");
+    }
+    return true; // Continua chamando o callback a cada 1 segundo
+}
+
 // Função para detectar pressionamento do botão (com debounce)
 bool botao_pressionado() {
     if (gpio_get(BOTAO_PIN) == 0) {
@@ -59,6 +67,7 @@ bool botao_pressionado() {
 
 int main() {
     stdio_init_all();  // Inicializa a comunicação serial
+    printf("Inicializando semáforo...\n");  // Teste de início
 
     // Configura os LEDs como saída
     gpio_init(LED_VERDE);
@@ -73,9 +82,14 @@ int main() {
     gpio_set_dir(BOTAO_PIN, GPIO_IN);
     gpio_pull_up(BOTAO_PIN);
 
-    struct repeating_timer timer;
+    struct repeating_timer timer_estado;
+    struct repeating_timer timer_status;
+
+    // Inicia o temporizador para o status a cada 1 segundo
+    add_repeating_timer_ms(1000, imprimir_status_callback, NULL, &timer_status);
 
     while (true) {
+        printf("Loop principal rodando...\n");  // Teste no loop principal
         // Inicia o ciclo quando o botão for pressionado
         if (!ciclo_ativo && botao_pressionado()) {
             printf("Botão pressionado! Iniciando ciclo do semáforo...\n");
@@ -88,8 +102,8 @@ int main() {
             ciclo_ativo = true;
             estado = 1; // Prepara para o próximo estado
 
-            // Inicia o temporizador com um callback a cada 3 segundos
-            add_repeating_timer_ms(3000, mudar_estado_callback, NULL, &timer);
+            // Inicia o temporizador para mudar o estado do semáforo
+            add_repeating_timer_ms(1000, mudar_estado_callback, NULL, &timer_estado);
         }
 
         sleep_ms(10); // Pequena espera para evitar alto uso da CPU
